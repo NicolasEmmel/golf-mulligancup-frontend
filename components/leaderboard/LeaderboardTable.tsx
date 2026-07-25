@@ -46,14 +46,21 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
 
   return (
     <div className="overflow-x-auto rounded-2xl bg-surface/90 shadow-[var(--shadow-soft)]">
-      <table className="w-full min-w-[36rem] text-left text-sm">
+      <table className="w-full table-fixed text-left text-sm sm:table-auto">
+        <colgroup>
+          <col className="w-10 sm:w-auto" />
+          <col />
+          <col className="w-11 sm:w-auto" />
+          <col className="w-12 sm:w-auto" />
+          <col className="w-14 sm:w-auto" />
+        </colgroup>
         <thead>
-          <tr className="border-b border-border bg-surface-mint text-xs font-bold uppercase tracking-wide text-primary">
-            <th className="px-3 py-3">#</th>
-            <th className="px-3 py-3">Spieler</th>
-            <th className="px-3 py-3 text-center">Thru</th>
-            <th className="px-3 py-3 text-center">Heute</th>
-            <th className="px-3 py-3 text-center">Gesamt</th>
+          <tr className="border-b border-border bg-surface-mint text-[0.65rem] font-bold uppercase tracking-wide text-primary sm:text-xs">
+            <th className="px-2 py-3 sm:px-3">#</th>
+            <th className="px-2 py-3 sm:px-3">Spieler</th>
+            <th className="px-1 py-3 text-center sm:px-3">Thru</th>
+            <th className="px-1 py-3 text-center sm:px-3">Heute</th>
+            <th className="px-1 py-3 text-center sm:px-3">Gesamt</th>
           </tr>
         </thead>
         <tbody>
@@ -62,7 +69,7 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
               key={entry.playerUuid}
               className="border-b border-border/60 last:border-0"
             >
-              <td className="px-3 py-3">
+              <td className="px-2 py-3 sm:px-3">
                 <span
                   className={cn(
                     "inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
@@ -72,15 +79,15 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
                   {entry.position}
                 </span>
               </td>
-              <td className="px-3 py-3 font-extrabold text-foreground">
+              <td className="truncate px-2 py-3 font-extrabold text-foreground sm:px-3">
                 {entry.playerName}
               </td>
-              <td className="px-3 py-3 text-center font-semibold tabular-nums">
+              <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
                 {entry.thru >= 18 ? "F" : entry.thru}
               </td>
               <td
                 className={cn(
-                  "px-3 py-3 text-center font-semibold tabular-nums",
+                  "px-1 py-3 text-center font-semibold tabular-nums sm:px-3",
                   toParClass(entry.toParDay ?? 0),
                 )}
               >
@@ -88,7 +95,7 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
               </td>
               <td
                 className={cn(
-                  "px-3 py-3 text-center font-bold tabular-nums",
+                  "px-1 py-3 text-center font-bold tabular-nums sm:px-3",
                   toParClass(entry.toParTotal ?? 0),
                 )}
               >
