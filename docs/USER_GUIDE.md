@@ -50,12 +50,12 @@ Filter **Herren / Damen / Senioren**. Spalten:
 | Spalte | Bedeutung |
 |--------|-----------|
 | Thru | Gespielte Löcher heute (`F` = 18 fertig) |
-| Heute | Brutto-Schläge **am aktuellen Tag** |
-| Gesamt | Brutto-Schläge **über alle Tage** |
+| Heute | **Zu Par** am aktuellen Tag (jeder Tag startet bei `E` / 0) |
+| Gesamt | Summe der Tages-zu-Par-Werte über alle bisherigen Tage |
 
 ![Rangliste](guide/images/08-leaderboard.png)
 
-Am ersten Turniertag sind **Heute** und **Gesamt** gleich. Ab Tag 2 weichen sie voneinander ab.
+Zu Par wird lochweise berechnet (`Schläge − Par`). Am ersten Tag sind **Heute** und **Gesamt** gleich.
 
 ---
 

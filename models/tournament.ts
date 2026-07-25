@@ -50,6 +50,10 @@ export interface LeaderboardEntry {
   totalStrokes: number;
   gross: number;
   netto: number;
+  /** Gross to-par for the current leaderboard day (starts at 0 each day). */
+  toParDay: number;
+  /** Sum of daily to-par values through this day. */
+  toParTotal: number;
   gender: Gender;
   thru: number;
   position: number;

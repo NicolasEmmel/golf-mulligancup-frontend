@@ -8,13 +8,25 @@ function rankClass(position: number) {
   return "bg-primary/15 text-primary";
 }
 
-/** Sort by cumulative total (Gesamt), lowest first; re-rank for display. */
-function sortByTotalScore(entries: LeaderboardEntry[]): LeaderboardEntry[] {
+function formatToPar(value: number): string {
+  if (value === 0) return "E";
+  if (value > 0) return `+${value}`;
+  return String(value);
+}
+
+function toParClass(value: number): string {
+  if (value < 0) return "text-error";
+  if (value > 0) return "text-foreground";
+  return "text-primary";
+}
+
+/** Sort by cumulative to-par (Gesamt), lowest first; re-rank for display. */
+function sortByToPar(entries: LeaderboardEntry[]): LeaderboardEntry[] {
   return [...entries]
     .sort((a, b) => {
-      const totalDiff = a.totalStrokes - b.totalStrokes;
+      const totalDiff = a.toParTotal - b.toParTotal;
       if (totalDiff !== 0) return totalDiff;
-      const dayDiff = a.totalStrokesDay - b.totalStrokesDay;
+      const dayDiff = a.toParDay - b.toParDay;
       if (dayDiff !== 0) return dayDiff;
       return a.playerName.localeCompare(b.playerName, "de");
     })
@@ -30,7 +42,7 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
     );
   }
 
-  const ranked = sortByTotalScore(entries);
+  const ranked = sortByToPar(entries);
 
   return (
     <div className="overflow-x-auto rounded-2xl bg-surface/90 shadow-[var(--shadow-soft)]">
@@ -66,11 +78,21 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
               <td className="px-3 py-3 text-center font-semibold tabular-nums">
                 {entry.thru >= 18 ? "F" : entry.thru}
               </td>
-              <td className="px-3 py-3 text-center font-semibold tabular-nums">
-                {entry.totalStrokesDay > 0 ? entry.totalStrokesDay : "—"}
+              <td
+                className={cn(
+                  "px-3 py-3 text-center font-semibold tabular-nums",
+                  toParClass(entry.toParDay ?? 0),
+                )}
+              >
+                {formatToPar(entry.toParDay ?? 0)}
               </td>
-              <td className="px-3 py-3 text-center font-bold tabular-nums">
-                {entry.totalStrokes > 0 ? entry.totalStrokes : "—"}
+              <td
+                className={cn(
+                  "px-3 py-3 text-center font-bold tabular-nums",
+                  toParClass(entry.toParTotal ?? 0),
+                )}
+              >
+                {formatToPar(entry.toParTotal ?? 0)}
               </td>
             </tr>
           ))}
