@@ -20,6 +20,7 @@ import type {
   OperationResult,
   PlayerScorecard,
   SubmitScoreRequest,
+  SubmitScoresRequest,
 } from "@/models/tournament";
 import {
   createTournamentHubConnection,
@@ -31,6 +32,7 @@ import {
   registerLeaderboardViewer as hubRegisterLeaderboard,
   registerScoringClient as hubRegisterScoring,
   submitScore as hubSubmitScore,
+  submitScores as hubSubmitScores,
 } from "@/services/signalr/tournamentHub";
 
 type RegistrationMode =
@@ -49,6 +51,7 @@ interface SignalRContextValue {
   registerScoringClient: (playerUuid: string) => Promise<OperationResult>;
   registerLeaderboardViewer: () => Promise<void>;
   submitScore: (request: SubmitScoreRequest) => Promise<OperationResult>;
+  submitScores: (request: SubmitScoresRequest) => Promise<OperationResult>;
   clearSync: () => void;
 }
 
@@ -245,6 +248,18 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
     [ensureConnected],
   );
 
+  const submitScores = useCallback(
+    async (request: SubmitScoresRequest) => {
+      const connection = await ensureConnected();
+      const result = await hubSubmitScores(connection, request);
+      if (!result.success) {
+        setLastError(result.error ?? "Ergebnis konnte nicht gesendet werden");
+      }
+      return result;
+    },
+    [ensureConnected],
+  );
+
   const clearSync = useCallback(() => {
     registrationRef.current = { kind: "none" };
     setRegisteredPlayerUuid(null);
@@ -264,6 +279,7 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
       registerScoringClient,
       registerLeaderboardViewer,
       submitScore,
+      submitScores,
       clearSync,
     }),
     [
@@ -277,6 +293,7 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
       registerScoringClient,
       registerLeaderboardViewer,
       submitScore,
+      submitScores,
       clearSync,
     ],
   );

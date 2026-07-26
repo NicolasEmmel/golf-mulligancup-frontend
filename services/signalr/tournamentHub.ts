@@ -5,6 +5,7 @@ import type {
   OperationResult,
   PlayerScorecard,
   SubmitScoreRequest,
+  SubmitScoresRequest,
 } from "@/models/tournament";
 import { TournamentHubEvents, TournamentHubMethods } from "./events";
 
@@ -61,6 +62,16 @@ export async function submitScore(
 ): Promise<OperationResult> {
   return connection.invoke<OperationResult>(
     TournamentHubMethods.submitScore,
+    request,
+  );
+}
+
+export async function submitScores(
+  connection: HubConnection,
+  request: SubmitScoresRequest,
+): Promise<OperationResult> {
+  return connection.invoke<OperationResult>(
+    TournamentHubMethods.submitScores,
     request,
   );
 }

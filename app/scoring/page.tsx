@@ -46,7 +46,7 @@ export default function ScoringPage() {
     connectionState,
     scorecard,
     registerScoringClient,
-    submitScore,
+    submitScores,
     clearSync,
   } = useSignalR();
 
@@ -307,20 +307,29 @@ export default function ScoringPage() {
     setStatusMessage(null);
     try {
       const nextSaved: DraftScores = { ...saved };
+      const batch: { playerUuid: string; holeId: number; strokes: number }[] =
+        [];
+
       for (const mate of flightMates) {
         const key = scoreDraftKey(mate.uuid, hole.number);
         const strokes = drafts[key] ?? hole.par;
         if (nextSaved[key] === strokes) continue;
-        const result = await submitScore({
-          day,
+        batch.push({
           playerUuid: mate.uuid,
           holeId: hole.number,
           strokes,
         });
+      }
+
+      if (batch.length > 0) {
+        const result = await submitScores({ day, scores: batch });
         if (!result.success) {
-          throw new Error(result.error ?? `Fehler bei ${mate.name}`);
+          throw new Error(result.error ?? "Ergebnisse konnten nicht gesendet werden");
         }
-        nextSaved[key] = strokes;
+        for (const entry of batch) {
+          nextSaved[scoreDraftKey(entry.playerUuid, entry.holeId)] =
+            entry.strokes;
+        }
       }
       setSaved(nextSaved);
 

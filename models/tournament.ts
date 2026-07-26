@@ -132,6 +132,17 @@ export interface SubmitScoreRequest {
   strokes: number;
 }
 
+export interface ScoreEntry {
+  playerUuid: string;
+  holeId: number;
+  strokes: number;
+}
+
+export interface SubmitScoresRequest {
+  day: number;
+  scores: ScoreEntry[];
+}
+
 export interface SetCurrentDayRequest {
   day: number;
 }

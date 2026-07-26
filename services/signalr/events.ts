@@ -3,6 +3,7 @@ export const TournamentHubMethods = {
   registerScoringClient: "RegisterScoringClient",
   registerLeaderboardViewer: "RegisterLeaderboardViewer",
   submitScore: "SubmitScore",
+  submitScores: "SubmitScores",
 } as const;
 
 /** Client event names (server → client). Must match backend SendAsync names. */

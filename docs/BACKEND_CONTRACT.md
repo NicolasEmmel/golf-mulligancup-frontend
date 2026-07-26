@@ -21,6 +21,7 @@ Production default: `https://golf-tournament-backend.fly.dev`
 | `RegisterScoringClient` | `playerUuid` (GUID string) | `OperationResultDto` |
 | `RegisterLeaderboardViewer` | none | void |
 | `SubmitScore` | `SubmitScoreRequest` | `OperationResultDto` |
+| `SubmitScores` | `SubmitScoresRequest` `{ day, scores: [{ playerUuid, holeId, strokes }] }` | `OperationResultDto` |
 
 After successful scoring registration, server sends `ReceiveSyncState` to caller.
 
