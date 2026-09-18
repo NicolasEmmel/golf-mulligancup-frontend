@@ -6,12 +6,10 @@ import { ConnectionStatus } from "@/components/common/ConnectionStatus";
 import { FairwayShell } from "@/components/common/FairwayShell";
 import { PrimaryCta } from "@/components/common/PrimaryCta";
 import { useSignalR } from "@/context/SignalRContext";
-import { useTournament } from "@/context/TournamentContext";
 import { APP_NAME, routes } from "@/lib/constants";
 
 export default function HomePage() {
   const { connectionState } = useSignalR();
-  const { state } = useTournament();
 
   return (
     <FairwayShell>
@@ -21,9 +19,7 @@ export default function HomePage() {
           {APP_NAME}
         </h1>
         <p className="mt-3 text-center text-sm text-muted">
-          {state
-            ? `Tag ${state.currentDay} von ${state.totalDays}`
-            : "Live-Turnier-Scoring"}
+          Live-Turnier-Scoring
         </p>
         <div className="mt-4">
           <ConnectionStatus state={connectionState} />

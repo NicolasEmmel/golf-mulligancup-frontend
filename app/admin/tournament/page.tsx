@@ -14,41 +14,21 @@ import {
 } from "@/services/api/tournamentApi";
 
 export default function AdminTournamentPage() {
-  const { state, refresh, setCurrentDay } = useTournament();
-  const [dayInput, setDayInput] = useState(1);
-  const [totalDays, setTotalDays] = useState(3);
+  const { refresh } = useTournament();
   const [course, setCourse] = useState<CourseInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
-    if (state) {
-      setDayInput(state.currentDay);
-      setTotalDays(state.totalDays);
-    }
-  }, [state]);
-
-  useEffect(() => {
     void tournamentApi.getCourse().then(setCourse).catch(() => undefined);
   }, []);
-
-  const saveDay = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      await setCurrentDay(dayInput);
-      setMessage(`Aktueller Tag auf ${dayInput} gesetzt.`);
-    } catch (err) {
-      setError(normalizeError(err));
-    }
-  };
 
   const doReset = async () => {
     setConfirmReset(false);
     setError(null);
     try {
-      await tournamentApi.reset({ totalDays });
+      await tournamentApi.reset();
       await refresh();
       setMessage("Turnier zurückgesetzt.");
     } catch (err) {
@@ -62,10 +42,7 @@ export default function AdminTournamentPage() {
         <div className="flex items-center justify-between gap-3">
           <MintCard className="flex-1">
             <h1 className="text-2xl font-black text-primary">Turnier</h1>
-            <p className="text-sm text-muted">
-              Aktueller Tag {state?.currentDay ?? "—"} von{" "}
-              {state?.totalDays ?? "—"}
-            </p>
+            <p className="text-sm text-muted">Eintägiges Turnier · Platz & Reset</p>
           </MintCard>
           <Link
             href={routes.admin}
@@ -74,30 +51,6 @@ export default function AdminTournamentPage() {
             Zurück
           </Link>
         </div>
-
-        <form
-          onSubmit={saveDay}
-          className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-soft)]"
-        >
-          <h2 className="font-bold text-primary">Aktuellen Tag ändern</h2>
-          <label className="mt-3 block text-sm font-semibold">
-            Tag
-            <input
-              type="number"
-              min={1}
-              max={state?.totalDays ?? 10}
-              value={dayInput}
-              onChange={(e) => setDayInput(Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
-          </label>
-          <button
-            type="submit"
-            className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
-          >
-            Tag aktualisieren
-          </button>
-        </form>
 
         <div className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-soft)]">
           <h2 className="font-bold text-primary">Platz</h2>
@@ -130,16 +83,6 @@ export default function AdminTournamentPage() {
             Löscht alle Turnierdaten in Redis (Spieler, Flights, Ergebnisse,
             Ranglisten) und startet ein neues Turnier.
           </p>
-          <label className="mt-3 block text-sm font-semibold">
-            Anzahl Tage nach dem Reset
-            <input
-              type="number"
-              min={1}
-              value={totalDays}
-              onChange={(e) => setTotalDays(Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
-          </label>
           <button
             type="button"
             onClick={() => setConfirmReset(true)}

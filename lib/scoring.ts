@@ -1,9 +1,15 @@
 export type DraftScores = Record<string, number>;
 
+export type DraftMulligans = Record<string, boolean>;
+
 export const HOLE_COUNT = 18;
 
 export function scoreDraftKey(playerUuid: string, holeId: number): string {
   return `${playerUuid}:${holeId}`;
+}
+
+export function mulliganDraftKey(playerUuid: string, holeId: number): string {
+  return `${playerUuid}:${holeId}:mulligan`;
 }
 
 /** True when every flight mate has a positive stroke count for holes 1–18. */

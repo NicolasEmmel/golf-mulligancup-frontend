@@ -10,7 +10,6 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { MintCard } from "@/components/common/MintCard";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { useSignalR } from "@/context/SignalRContext";
-import { useTournament } from "@/context/TournamentContext";
 import { routes } from "@/lib/constants";
 import { normalizeError } from "@/lib/errors";
 import {
@@ -26,7 +25,6 @@ const categories: { id: LeaderboardCategory; label: string }[] = [
 ];
 
 export default function LeaderboardPage() {
-  const { state } = useTournament();
   const {
     connectionState,
     leaderboards,
@@ -42,12 +40,10 @@ export default function LeaderboardPage() {
 
   // Show scores ASAP via REST; SignalR then keeps them live.
   useEffect(() => {
-    const day = state?.currentDay;
-    if (day == null) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
-        const boards = await tournamentApi.getLeaderboards(day);
+        const boards = await tournamentApi.getLeaderboards();
         if (!cancelled) setRestBoards(boards);
       } catch {
         /* live register may still fill the table */
@@ -56,7 +52,7 @@ export default function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [state?.currentDay]);
+  }, []);
 
   // Register (and retry) whenever we are connected — clears sticky boot errors.
   useEffect(() => {
@@ -114,9 +110,7 @@ export default function LeaderboardPage() {
               <h1 className="text-2xl font-black tracking-wide text-primary">
                 RANGLISTE
               </h1>
-              <p className="text-xs text-muted">
-                Tag {state?.currentDay ?? "—"} · Live-Updates
-              </p>
+              <p className="text-xs text-muted">Live-Updates</p>
             </div>
           </div>
           <ConnectionStatus state={connectionState} />

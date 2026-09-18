@@ -20,7 +20,15 @@ function toParClass(value: number): string {
   return "text-primary";
 }
 
-/** Sort by cumulative to-par (Gesamt), lowest first; re-rank for display. */
+function grossStrokes(entry: LeaderboardEntry): number {
+  return entry.gross ?? entry.totalStrokesDay ?? entry.totalStrokes ?? 0;
+}
+
+function netStrokes(entry: LeaderboardEntry): number {
+  return entry.netto ?? 0;
+}
+
+/** Sort by gross to-par, lowest first; re-rank for display. */
 function sortByToPar(entries: LeaderboardEntry[]): LeaderboardEntry[] {
   return [...entries]
     .sort((a, b) => {
@@ -52,15 +60,19 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
           <col />
           <col className="w-11 sm:w-auto" />
           <col className="w-12 sm:w-auto" />
-          <col className="w-14 sm:w-auto" />
+          <col className="w-12 sm:w-auto" />
+          <col className="w-12 sm:w-auto" />
+          <col className="w-10 sm:w-auto" />
         </colgroup>
         <thead>
           <tr className="border-b border-border bg-surface-mint text-[0.65rem] font-bold uppercase tracking-wide text-primary sm:text-xs">
             <th className="px-2 py-3 sm:px-3">#</th>
             <th className="px-2 py-3 sm:px-3">Spieler</th>
             <th className="px-1 py-3 text-center sm:px-3">Thru</th>
-            <th className="px-1 py-3 text-center sm:px-3">Heute</th>
-            <th className="px-1 py-3 text-center sm:px-3">Gesamt</th>
+            <th className="px-1 py-3 text-center sm:px-3">Brutto</th>
+            <th className="px-1 py-3 text-center sm:px-3">Netto</th>
+            <th className="px-1 py-3 text-center sm:px-3">+/−</th>
+            <th className="px-1 py-3 text-center sm:px-3">M</th>
           </tr>
         </thead>
         <tbody>
@@ -85,13 +97,11 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
               <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
                 {entry.thru >= 18 ? "F" : entry.thru}
               </td>
-              <td
-                className={cn(
-                  "px-1 py-3 text-center font-semibold tabular-nums sm:px-3",
-                  toParClass(entry.toParDay ?? 0),
-                )}
-              >
-                {formatToPar(entry.toParDay ?? 0)}
+              <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
+                {grossStrokes(entry)}
+              </td>
+              <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
+                {netStrokes(entry)}
               </td>
               <td
                 className={cn(
@@ -100,6 +110,9 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
                 )}
               >
                 {formatToPar(entry.toParTotal ?? 0)}
+              </td>
+              <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
+                {entry.mulligans ?? 0}
               </td>
             </tr>
           ))}

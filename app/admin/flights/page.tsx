@@ -5,8 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FairwayShell } from "@/components/common/FairwayShell";
 import { LoadingState } from "@/components/common/LoadingState";
 import { MintCard } from "@/components/common/MintCard";
-import { useTournament } from "@/context/TournamentContext";
-import { routes } from "@/lib/constants";
+import { routes, FLIGHT_MAX_PLAYERS, TOURNAMENT_DAY } from "@/lib/constants";
 import { normalizeError } from "@/lib/errors";
 import type { Flight, Player, PlayerFlight } from "@/models/tournament";
 import { playerApi } from "@/services/api/playerApi";
@@ -25,8 +24,6 @@ function assignedPlayerUuids(
 }
 
 export default function AdminFlightsPage() {
-  const { state, loading: tournamentLoading } = useTournament();
-  const [day, setDay] = useState<number | null>(null);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [assignments, setAssignments] = useState<
@@ -41,26 +38,21 @@ export default function AdminFlightsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const refreshSeq = useRef(0);
 
-  // Wait for tournament state so we never fetch day 1 by default when the
-  // tournament is already on day 2 (that race showed the wrong players).
-  useEffect(() => {
-    if (state?.currentDay != null) {
-      setDay((current) => current ?? state.currentDay);
-    }
-  }, [state?.currentDay]);
-
-  const refresh = useCallback(async (targetDay: number) => {
+  const refresh = useCallback(async () => {
     const seq = ++refreshSeq.current;
     setLoading(true);
     setError(null);
     try {
       const [flightList, playerList] = await Promise.all([
-        flightApi.listForDay(targetDay),
+        flightApi.listForDay(TOURNAMENT_DAY),
         playerApi.list(),
       ]);
       const map: Record<number, PlayerFlight[]> = {};
       for (const f of flightList) {
-        map[f.number] = await flightApi.playersInFlight(targetDay, f.number);
+        map[f.number] = await flightApi.playersInFlight(
+          TOURNAMENT_DAY,
+          f.number,
+        );
       }
       if (seq !== refreshSeq.current) return;
 
@@ -90,23 +82,24 @@ export default function AdminFlightsPage() {
   }, []);
 
   useEffect(() => {
-    if (day == null) return;
-    void refresh(day);
-  }, [day, refresh]);
+    void refresh();
+  }, [refresh]);
 
   const availablePlayers = useMemo(() => {
     const taken = assignedPlayerUuids(assignments);
     return players.filter((p) => !taken.has(p.uuid));
   }, [players, assignments]);
 
+  const assignFlightCount = (assignments[assignFlight] ?? []).length;
+  const assignFlightFull = assignFlightCount >= FLIGHT_MAX_PLAYERS;
+
   const createFlight = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (day == null) return;
     setMessage(null);
     try {
-      await flightApi.create({ day, number: flightNumber });
-      setMessage(`Flight ${flightNumber} für Tag ${day} angelegt.`);
-      await refresh(day);
+      await flightApi.create({ day: TOURNAMENT_DAY, number: flightNumber });
+      setMessage(`Flight ${flightNumber} angelegt.`);
+      await refresh();
     } catch (err) {
       setError(normalizeError(err));
     }
@@ -114,36 +107,31 @@ export default function AdminFlightsPage() {
 
   const assignPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (day == null || !assignPlayerUuid) return;
+    if (!assignPlayerUuid) return;
     setMessage(null);
     try {
       await flightApi.assign({
-        day,
+        day: TOURNAMENT_DAY,
         flightNumber: assignFlight,
         playerUuid: assignPlayerUuid,
       });
       setMessage("Spieler dem Flight zugewiesen.");
-      await refresh(day);
+      await refresh();
     } catch (err) {
       setError(normalizeError(err));
     }
   };
 
   const removePlayer = async (playerUuid: string, name: string) => {
-    if (day == null) return;
-    if (
-      !window.confirm(
-        `${name} aus dem Flight für Tag ${day} entfernen?`,
-      )
-    ) {
+    if (!window.confirm(`${name} aus dem Flight entfernen?`)) {
       return;
     }
     setMessage(null);
     setBusyPlayerUuid(playerUuid);
     try {
-      await flightApi.unassign(day, playerUuid);
+      await flightApi.unassign(TOURNAMENT_DAY, playerUuid);
       setMessage(`${name} aus dem Flight entfernt.`);
-      await refresh(day);
+      await refresh();
     } catch (err) {
       setError(normalizeError(err));
     } finally {
@@ -154,8 +142,6 @@ export default function AdminFlightsPage() {
   const playerName = (uuid: string) =>
     players.find((p) => p.uuid === uuid)?.name ?? uuid.slice(0, 8);
 
-  const showLoading = tournamentLoading || day == null || loading;
-
   return (
     <FairwayShell>
       <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
@@ -163,8 +149,8 @@ export default function AdminFlightsPage() {
           <MintCard className="flex-1">
             <h1 className="text-2xl font-black text-primary">Flights</h1>
             <p className="text-sm text-muted">
-              Flights pro Tag anlegen und Spieler zuweisen, damit sie scoren
-              können.
+              Flights mit 3–4 Spielern anlegen (gemischt möglich). Spieler
+              zuweisen, damit sie scoren können.
             </p>
           </MintCard>
           <Link
@@ -174,18 +160,6 @@ export default function AdminFlightsPage() {
             Zurück
           </Link>
         </div>
-
-        <label className="inline-flex items-center gap-2 rounded-2xl bg-surface px-4 py-3 text-sm font-semibold shadow-sm">
-          Tag
-          <input
-            type="number"
-            min={1}
-            value={day ?? ""}
-            disabled={day == null}
-            onChange={(e) => setDay(Number(e.target.value))}
-            className="w-20 rounded-lg border border-border px-2 py-1 disabled:opacity-50"
-          />
-        </label>
 
         <div className="grid gap-4 md:grid-cols-2">
           <form
@@ -205,8 +179,7 @@ export default function AdminFlightsPage() {
             </label>
             <button
               type="submit"
-              disabled={day == null}
-              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
             >
               Anlegen
             </button>
@@ -244,7 +217,7 @@ export default function AdminFlightsPage() {
                 className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               >
                 {flights.map((f) => (
-                  <option key={`${day}-${f.number}`} value={f.number}>
+                  <option key={f.number} value={f.number}>
                     Flight {f.number}
                   </option>
                 ))}
@@ -253,7 +226,7 @@ export default function AdminFlightsPage() {
             <button
               type="submit"
               disabled={
-                day == null ||
+                assignFlightFull ||
                 flights.length === 0 ||
                 availablePlayers.length === 0
               }
@@ -261,6 +234,11 @@ export default function AdminFlightsPage() {
             >
               Zuweisen
             </button>
+            {assignFlightFull && (
+              <p className="mt-2 text-xs font-semibold text-muted">
+                Flight {assignFlight} ist voll ({FLIGHT_MAX_PLAYERS} Spieler).
+              </p>
+            )}
           </form>
         </div>
 
@@ -269,17 +247,20 @@ export default function AdminFlightsPage() {
           <p className="text-sm font-semibold text-success">{message}</p>
         )}
 
-        {showLoading ? (
+        {loading ? (
           <LoadingState />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {flights.map((f) => (
               <div
-                key={`${day}-${f.number}`}
+                key={f.number}
                 className="rounded-2xl bg-surface-mint p-4 shadow-[var(--shadow-soft)]"
               >
                 <h3 className="text-lg font-black text-primary">
                   Flight {f.number}
+                  <span className="ml-2 text-sm font-semibold text-muted">
+                    ({(assignments[f.number] ?? []).length}/{FLIGHT_MAX_PLAYERS})
+                  </span>
                 </h3>
                 <ul className="mt-2 space-y-2 text-sm">
                   {(assignments[f.number] ?? []).map((a) => {
@@ -310,7 +291,7 @@ export default function AdminFlightsPage() {
               </div>
             ))}
             {flights.length === 0 && (
-              <p className="text-muted">Noch keine Flights für diesen Tag.</p>
+              <p className="text-muted">Noch keine Flights angelegt.</p>
             )}
           </div>
         )}

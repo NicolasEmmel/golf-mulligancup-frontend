@@ -9,6 +9,15 @@ describe("isFlightDayComplete", () => {
     expect(isFlightDayComplete([], {})).toBe(false);
   });
 
+  it("is true for a three-player flight with all holes", () => {
+    const mates = ["a", "b", "c"];
+    const scores: Record<string, number> = {};
+    for (const uuid of mates) {
+      for (let h = 1; h <= 18; h++) scores[scoreDraftKey(uuid, h)] = 4;
+    }
+    expect(isFlightDayComplete(mates, scores)).toBe(true);
+  });
+
   it("is false when any hole is missing", () => {
     const uuid = "a";
     const scores: Record<string, number> = {};

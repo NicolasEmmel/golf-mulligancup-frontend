@@ -18,7 +18,6 @@ interface TournamentContextValue {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  setCurrentDay: (day: number) => Promise<void>;
 }
 
 const TournamentContext = createContext<TournamentContextValue | null>(null);
@@ -40,11 +39,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setCurrentDay = useCallback(async (day: number) => {
-    const next = await tournamentApi.setCurrentDay({ day });
-    setState(next);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -63,8 +57,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ state, loading, error, refresh, setCurrentDay }),
-    [state, loading, error, refresh, setCurrentDay],
+    () => ({ state, loading, error, refresh }),
+    [state, loading, error, refresh],
   );
 
   return (

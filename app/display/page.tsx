@@ -7,7 +7,6 @@ import { FilterChip } from "@/components/common/FilterChip";
 import { LoadingState } from "@/components/common/LoadingState";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { useSignalR } from "@/context/SignalRContext";
-import { useTournament } from "@/context/TournamentContext";
 import { LeaderboardCategory } from "@/models/tournament";
 
 const categories: { id: LeaderboardCategory; label: string }[] = [
@@ -17,7 +16,6 @@ const categories: { id: LeaderboardCategory; label: string }[] = [
 ];
 
 export default function DisplayPage() {
-  const { state } = useTournament();
   const { leaderboards, registerLeaderboardViewer, ensureConnected } =
     useSignalR();
   const [category, setCategory] = useState(LeaderboardCategory.Men);
@@ -62,7 +60,6 @@ export default function DisplayPage() {
                 RANGLISTE
               </h1>
               <p className="mt-2 text-xl text-muted">
-                Tag {state?.currentDay ?? "—"} ·{" "}
                 {categories.find((c) => c.id === category)?.label}
               </p>
             </div>

@@ -7,10 +7,9 @@ import type {
   OperationResult,
   PlayerFlight,
   PlayerScorecard,
-  ResetTournamentRequest,
-  SetCurrentDayRequest,
   TournamentState,
 } from "@/models/tournament";
+import { TOURNAMENT_DAY } from "@/lib/constants";
 import { apiFetch } from "./http";
 
 export interface CourseInfo {
@@ -20,27 +19,21 @@ export interface CourseInfo {
 
 export const tournamentApi = {
   getState: () => apiFetch<TournamentState>("/api/tournament/state"),
-  setCurrentDay: (body: SetCurrentDayRequest) =>
-    apiFetch<TournamentState>("/api/tournament/current-day", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  reset: (body: ResetTournamentRequest = {}) =>
+  reset: () =>
     apiFetch<OperationResult>("/api/tournament/reset", {
       method: "POST",
-      body: JSON.stringify(body),
     }),
   getCourse: () => apiFetch<CourseInfo>("/api/tournament/course"),
-  getLeaderboards: (day: number) =>
-    apiFetch<LeaderboardSnapshot[]>(`/api/tournament/leaderboards/${day}`),
-  getScorecard: (day: number, playerUuid: string) =>
-    apiFetch<PlayerScorecard>(
-      `/api/tournament/scorecard/${day}/${playerUuid}`,
-    ),
+  getLeaderboards: () =>
+    apiFetch<LeaderboardSnapshot[]>("/api/tournament/leaderboards"),
+  getScorecard: (playerUuid: string) =>
+    apiFetch<PlayerScorecard>(`/api/tournament/scorecard/${playerUuid}`),
 } as const;
 
 export const flightApi = {
-  listForDay: (day: number) => apiFetch<Flight[]>(`/api/flights/${day}`),
+  list: () => apiFetch<Flight[]>("/api/flights"),
+  listForDay: (day: number = TOURNAMENT_DAY) =>
+    apiFetch<Flight[]>(`/api/flights/${day}`),
   create: (body: CreateFlightRequest) =>
     apiFetch<Flight>("/api/flights", {
       method: "POST",

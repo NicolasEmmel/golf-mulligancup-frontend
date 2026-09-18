@@ -1,6 +1,6 @@
 "use client";
 
-import { Flag, Home, Send, Trophy } from "lucide-react";
+import { Dices, Flag, Home, Send, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircularAction } from "@/components/common/CircularAction";
@@ -12,13 +12,14 @@ import { MintCard } from "@/components/common/MintCard";
 import { PlayerNamePicker } from "@/components/scoring/PlayerNamePicker";
 import { ScoreStepper } from "@/components/scoring/ScoreStepper";
 import { useSignalR } from "@/context/SignalRContext";
-import { useTournament } from "@/context/TournamentContext";
-import { routes } from "@/lib/constants";
+import { routes, TOURNAMENT_DAY } from "@/lib/constants";
 import { normalizeError } from "@/lib/errors";
 import {
   HOLE_COUNT,
   isFlightDayComplete,
+  mulliganDraftKey,
   scoreDraftKey,
+  type DraftMulligans,
   type DraftScores,
 } from "@/lib/scoring";
 import {
@@ -41,7 +42,6 @@ const SCORES_SAVED_MESSAGE = "Ergebnisse gespeichert";
 
 export default function ScoringPage() {
   const router = useRouter();
-  const { state } = useTournament();
   const {
     connectionState,
     scorecard,
@@ -63,6 +63,8 @@ export default function ScoringPage() {
   const [holeIndex, setHoleIndex] = useState(0);
   const [drafts, setDrafts] = useState<DraftScores>({});
   const [saved, setSaved] = useState<DraftScores>({});
+  const [mulliganDrafts, setMulliganDrafts] = useState<DraftMulligans>({});
+  const [mulliganSaved, setMulliganSaved] = useState<DraftMulligans>({});
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const initialHoleSetFor = useRef<string | null>(null);
@@ -91,14 +93,12 @@ export default function ScoringPage() {
   }, []);
 
   const hole: Hole | undefined = course?.holes[holeIndex];
-  // Prefer the day from the registered sync scorecard so day changes mid-session
-  // do not silently retarget submissions.
-  const day = scorecard?.day ?? state?.currentDay ?? 1;
+  const day = TOURNAMENT_DAY;
 
   const loadFlight = useCallback(
-    async (player: Player, flightNumber: number, currentDay: number) => {
+    async (player: Player, flightNumber: number) => {
       const assignments = await flightApi.playersInFlight(
-        currentDay,
+        day,
         flightNumber,
       );
       const uuids = new Set(assignments.map((a: PlayerFlight) => a.playerUuid));
@@ -112,7 +112,7 @@ export default function ScoringPage() {
       const mateCards = await Promise.all(
         resolved.map(async (mate) => {
           try {
-            return await tournamentApi.getScorecard(currentDay, mate.uuid);
+            return await tournamentApi.getScorecard(mate.uuid);
           } catch {
             return null;
           }
@@ -120,11 +120,16 @@ export default function ScoringPage() {
       );
 
       const fromServer: DraftScores = {};
+      const mulligansFromServer: DraftMulligans = {};
       for (const card of mateCards) {
         if (!card) continue;
         for (const h of card.holes) {
           if (h.strokes > 0) {
             fromServer[scoreDraftKey(card.playerUuid, h.holeId)] = h.strokes;
+          }
+          if (h.usedMulligan) {
+            mulligansFromServer[mulliganDraftKey(card.playerUuid, h.holeId)] =
+              true;
           }
         }
       }
@@ -132,10 +137,15 @@ export default function ScoringPage() {
         setSaved((prev) => ({ ...prev, ...fromServer }));
         setDrafts((prev) => ({ ...prev, ...fromServer }));
       }
+      if (Object.keys(mulligansFromServer).length > 0) {
+        setMulliganSaved((prev) => ({ ...prev, ...mulligansFromServer }));
+        setMulliganDrafts((prev) => ({ ...prev, ...mulligansFromServer }));
+      }
 
       return {
         mates: resolved,
         scores: fromServer,
+        mulligans: mulligansFromServer,
         complete: isFlightDayComplete(
           resolved.map((m) => m.uuid),
           fromServer,
@@ -194,27 +204,32 @@ export default function ScoringPage() {
     if (!selected || !scorecard) return;
     if (scorecard.playerUuid !== selected.uuid) return;
 
-    const currentDay = scorecard.day;
     let cancelled = false;
 
     void (async () => {
       const nextSaved: DraftScores = {};
+      const nextMulliganSaved: DraftMulligans = {};
       for (const h of scorecard.holes) {
         if (h.strokes > 0) {
           nextSaved[scoreDraftKey(selected.uuid, h.holeId)] = h.strokes;
         }
+        if (h.usedMulligan) {
+          nextMulliganSaved[mulliganDraftKey(selected.uuid, h.holeId)] = true;
+        }
       }
 
-      const flight = await loadFlight(
-        selected,
-        scorecard.flightNumber,
-        currentDay,
-      );
+      const flight = await loadFlight(selected, scorecard.flightNumber);
       if (cancelled) return;
 
       const merged: DraftScores = { ...flight.scores, ...nextSaved };
+      const mergedMulligans: DraftMulligans = {
+        ...flight.mulligans,
+        ...nextMulliganSaved,
+      };
       setSaved((prev) => ({ ...prev, ...merged }));
       setDrafts((prev) => ({ ...prev, ...merged }));
+      setMulliganSaved((prev) => ({ ...prev, ...mergedMulligans }));
+      setMulliganDrafts((prev) => ({ ...prev, ...mergedMulligans }));
 
       if (
         isFlightDayComplete(
@@ -229,6 +244,8 @@ export default function ScoringPage() {
         setFlightMates([]);
         setDrafts({});
         setSaved({});
+        setMulliganDrafts({});
+        setMulliganSaved({});
         initialHoleSetFor.current = null;
         resumeHoleIndex.current = null;
         setRegError(FLIGHT_COMPLETE_MESSAGE);
@@ -277,15 +294,29 @@ export default function ScoringPage() {
       }
       return next;
     });
-  }, [hole, flightMates, saved]);
+    setMulliganDrafts((prev) => {
+      const next = { ...prev };
+      for (const mate of flightMates) {
+        const mKey = mulliganDraftKey(mate.uuid, hole.number);
+        if (next[mKey] == null) {
+          next[mKey] = mulliganSaved[mKey] ?? false;
+        }
+      }
+      return next;
+    });
+  }, [hole, flightMates, saved, mulliganSaved]);
 
   const unsavedForHole = useMemo(() => {
     if (!hole) return false;
     return flightMates.some((mate) => {
       const key = scoreDraftKey(mate.uuid, hole.number);
-      return drafts[key] !== saved[key];
+      const mKey = mulliganDraftKey(mate.uuid, hole.number);
+      return (
+        drafts[key] !== saved[key] ||
+        (mulliganDrafts[mKey] ?? false) !== (mulliganSaved[mKey] ?? false)
+      );
     });
-  }, [drafts, saved, flightMates, hole]);
+  }, [drafts, saved, mulliganDrafts, mulliganSaved, flightMates, hole]);
 
   const finishAndGoHome = useCallback(() => {
     clearScoringSession();
@@ -295,11 +326,19 @@ export default function ScoringPage() {
     setFlightMates([]);
     setDrafts({});
     setSaved({});
+    setMulliganDrafts({});
+    setMulliganSaved({});
     setStatusMessage(null);
     initialHoleSetFor.current = null;
     resumeHoleIndex.current = null;
     router.replace(routes.home);
   }, [clearSync, router]);
+
+  const goToClubRandomizer = useCallback(() => {
+    if (!selected) return;
+    saveScoringSession({ playerUuid: selected.uuid, holeIndex });
+    router.push(routes.randomizer);
+  }, [selected, holeIndex, router]);
 
   const handleSubmitHole = async () => {
     if (!hole || !selected) return;
@@ -307,17 +346,28 @@ export default function ScoringPage() {
     setStatusMessage(null);
     try {
       const nextSaved: DraftScores = { ...saved };
-      const batch: { playerUuid: string; holeId: number; strokes: number }[] =
-        [];
+      const nextMulliganSaved: DraftMulligans = { ...mulliganSaved };
+      const batch: {
+        playerUuid: string;
+        holeId: number;
+        strokes: number;
+        usedMulligan: boolean;
+      }[] = [];
 
       for (const mate of flightMates) {
         const key = scoreDraftKey(mate.uuid, hole.number);
+        const mKey = mulliganDraftKey(mate.uuid, hole.number);
         const strokes = drafts[key] ?? hole.par;
-        if (nextSaved[key] === strokes) continue;
+        const usedMulligan = mulliganDrafts[mKey] ?? false;
+        const strokesMatch = nextSaved[key] === strokes;
+        const mulliganMatch =
+          (nextMulliganSaved[mKey] ?? false) === usedMulligan;
+        if (strokesMatch && mulliganMatch) continue;
         batch.push({
           playerUuid: mate.uuid,
           holeId: hole.number,
           strokes,
+          usedMulligan,
         });
       }
 
@@ -329,9 +379,16 @@ export default function ScoringPage() {
         for (const entry of batch) {
           nextSaved[scoreDraftKey(entry.playerUuid, entry.holeId)] =
             entry.strokes;
+          const mKey = mulliganDraftKey(entry.playerUuid, entry.holeId);
+          if (entry.usedMulligan) {
+            nextMulliganSaved[mKey] = true;
+          } else {
+            delete nextMulliganSaved[mKey];
+          }
         }
       }
       setSaved(nextSaved);
+      setMulliganSaved(nextMulliganSaved);
 
       if (
         isFlightDayComplete(
@@ -362,6 +419,8 @@ export default function ScoringPage() {
     setFlightMates([]);
     setDrafts({});
     setSaved({});
+    setMulliganDrafts({});
+    setMulliganSaved({});
     setRegError(null);
     setStatusMessage(null);
     initialHoleSetFor.current = null;
@@ -408,7 +467,7 @@ export default function ScoringPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase text-muted">
-                Flight {scorecard?.flightNumber ?? "—"} · Tag {day}
+                Flight {scorecard?.flightNumber ?? "—"}
               </p>
               <h1 className="text-4xl font-black text-primary">
                 Loch {hole?.number ?? "—"}
@@ -441,8 +500,17 @@ export default function ScoringPage() {
             const key = hole
               ? scoreDraftKey(mate.uuid, hole.number)
               : mate.uuid;
+            const mKey =
+              hole != null
+                ? mulliganDraftKey(mate.uuid, hole.number)
+                : mate.uuid;
             const value = drafts[key] ?? hole?.par ?? 4;
-            const isSaved = saved[key] === value && saved[key] != null;
+            const usedMulligan = mulliganDrafts[mKey] ?? false;
+            const savedMulligan = mulliganSaved[mKey] ?? false;
+            const isSaved =
+              saved[key] === value &&
+              saved[key] != null &&
+              usedMulligan === savedMulligan;
             const [first, ...rest] = mate.name.split(" ");
             return (
               <div
@@ -475,6 +543,21 @@ export default function ScoringPage() {
                     setDrafts((prev) => ({ ...prev, [key]: next }))
                   }
                 />
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border accent-primary"
+                    checked={usedMulligan}
+                    disabled={submitting}
+                    onChange={(e) =>
+                      setMulliganDrafts((prev) => ({
+                        ...prev,
+                        [mKey]: e.target.checked,
+                      }))
+                    }
+                  />
+                  Mulligan auf diesem Loch
+                </label>
               </div>
             );
           })}
@@ -513,13 +596,19 @@ export default function ScoringPage() {
           </button>
         </div>
 
-        <div className="mt-6 flex justify-center gap-5 pb-6">
+        <div className="mt-6 flex flex-wrap justify-center gap-4 pb-6 sm:gap-5">
           <CircularAction
             label="Senden"
             icon={<Send />}
             variant="primary"
             disabled={submitting || !hole}
             onClick={() => void handleSubmitHole()}
+          />
+          <CircularAction
+            label="Schläger-Rad"
+            icon={<Dices />}
+            disabled={submitting}
+            onClick={goToClubRandomizer}
           />
           <CircularAction
             label="Rangliste"

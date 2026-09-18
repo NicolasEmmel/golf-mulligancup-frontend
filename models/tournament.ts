@@ -40,6 +40,7 @@ export interface PlayerScore {
   playerUuid: string;
   holeId: number;
   strokes: number;
+  usedMulligan?: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -50,19 +51,17 @@ export interface LeaderboardEntry {
   totalStrokes: number;
   gross: number;
   netto: number;
-  /** Gross to-par for the current leaderboard day (starts at 0 each day). */
+  netToPar?: number;
   toParDay: number;
-  /** Sum of daily to-par values through this day. */
   toParTotal: number;
   gender: Gender;
   thru: number;
+  mulligans?: number;
   position: number;
 }
 
-export interface TournamentState {
-  currentDay: number;
-  totalDays: number;
-}
+/** Empty object from backend for single-day events. */
+export type TournamentState = Record<string, never>;
 
 export interface OperationResult {
   success: boolean;
@@ -74,6 +73,7 @@ export interface ScorecardHole {
   par: number;
   strokes: number;
   netStrokes: number;
+  usedMulligan?: boolean;
 }
 
 export interface PlayerScorecard {
@@ -85,6 +85,7 @@ export interface PlayerScorecard {
   gross: number;
   net: number;
   thru: number;
+  mulligans?: number;
 }
 
 export interface LeaderboardSnapshot {
@@ -94,10 +95,9 @@ export interface LeaderboardSnapshot {
 }
 
 export interface ClientSyncPayload {
-  currentDay: number;
   scorecard: PlayerScorecard | null;
   leaderboards: LeaderboardSnapshot[];
-  dayScores: PlayerScore[];
+  scores: PlayerScore[];
 }
 
 export interface CreatePlayerRequest {
@@ -130,23 +130,17 @@ export interface SubmitScoreRequest {
   playerUuid: string;
   holeId: number;
   strokes: number;
+  usedMulligan?: boolean;
 }
 
 export interface ScoreEntry {
   playerUuid: string;
   holeId: number;
   strokes: number;
+  usedMulligan?: boolean;
 }
 
 export interface SubmitScoresRequest {
   day: number;
   scores: ScoreEntry[];
-}
-
-export interface SetCurrentDayRequest {
-  day: number;
-}
-
-export interface ResetTournamentRequest {
-  totalDays?: number;
 }
