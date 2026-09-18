@@ -16,7 +16,7 @@ function rankClass(position: number) {
 
 function formatAverage(value: number): string {
   return value.toLocaleString("de-DE", {
-    minimumFractionDigits: 1,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   });
 }

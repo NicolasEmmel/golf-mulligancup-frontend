@@ -54,7 +54,7 @@ function sortValue(entry: LeaderboardEntry, key: SortKey): number {
 }
 
 function defaultDescending(key: SortKey): boolean {
-  return key === "thru";
+  return key === "thru" || key === "gross" || key === "net";
 }
 
 function sortEntries(
@@ -84,8 +84,8 @@ function sortEntries(
 }
 
 export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
-  const [sortKey, setSortKey] = useState<SortKey>("toPar");
-  const [descending, setDescending] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("gross");
+  const [descending, setDescending] = useState(true);
 
   const ranked = useMemo(
     () => sortEntries(entries, sortKey, descending),
