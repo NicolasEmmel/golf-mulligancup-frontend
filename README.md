@@ -1,6 +1,6 @@
 # Golf Tournament Live Scoring — Frontend
 
-Next.js (App Router) frontend for the [golf-tournament-backend](https://github.com/NicolasEmmel/golf-tournament-backend) live scoring API.
+Next.js (App Router) frontend for the [golf-mulligancup-backend](https://github.com/NicolasEmmel/golf-mulligancup-backend) live scoring API.
 
 ## Status
 
@@ -40,7 +40,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - Types: [`models/tournament.ts`](models/tournament.ts)
 - Hub events: [`services/signalr/events.ts`](services/signalr/events.ts)
 
-Production backend: `https://golf-tournament-backend.fly.dev`
+Production backend: `https://golf-mulligancup-backend.fly.dev`
 
 ## Deployment (GitHub Pages)
 
