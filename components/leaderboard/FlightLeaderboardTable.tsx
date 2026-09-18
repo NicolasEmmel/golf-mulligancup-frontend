@@ -45,7 +45,7 @@ export function FlightLeaderboardTable({
         <thead>
           <tr className="border-b border-border bg-surface-mint text-[0.65rem] font-bold uppercase tracking-wide text-primary sm:text-xs">
             <th className="px-2 py-3 sm:px-3">#</th>
-            <th className="px-2 py-3 sm:px-3">Flight</th>
+            <th className="px-2 py-3 sm:px-3">Team</th>
             <th className="px-1 py-3 text-center sm:px-3">Spieler</th>
             <th className="px-1 py-3 text-center sm:px-3">Ø Brutto</th>
             <th className="px-1 py-3 text-center sm:px-3">Ø Netto</th>
@@ -72,8 +72,21 @@ export function FlightLeaderboardTable({
                     {entry.position}
                   </span>
                 </td>
-                <td className="px-2 py-3 font-extrabold text-foreground sm:px-3">
-                  Flight {entry.flightNumber}
+                <td className="px-2 py-3 font-semibold text-foreground sm:px-3">
+                  {entry.playerNames && entry.playerNames.length > 0 ? (
+                    <span className="block leading-snug">
+                      {entry.playerNames.map((name, index) => (
+                        <span key={`${entry.flightNumber}-${name}`}>
+                          {index > 0 ? (
+                            <span className="text-muted"> · </span>
+                          ) : null}
+                          <span className="font-extrabold">{name}</span>
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="font-extrabold text-muted">—</span>
+                  )}
                 </td>
                 <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
                   {entry.playerCount}

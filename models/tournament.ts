@@ -103,6 +103,7 @@ export interface FlightLeaderboardEntry {
   averageNet: number;
   position: number;
   hasScores?: boolean;
+  playerNames?: string[];
 }
 
 export interface FlightLeaderboardSnapshot {
