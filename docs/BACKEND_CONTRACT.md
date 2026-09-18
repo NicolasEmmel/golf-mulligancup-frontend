@@ -6,12 +6,12 @@ Derived from `NicolasEmmel/golf-mulligancup-backend` (TournamentHub, REST contro
 
 Configure via `NEXT_PUBLIC_API_BASE_URL` (no trailing slash).
 
-Production default: `https://golf-mulligancup-backend.fly.dev`
+Production default: `https://golf-tournament-backend.fly.dev`
 
 ## SignalR
 
 - **Hub path:** `/hubs/tournament`
-- **Full URL:** `NEXT_PUBLIC_SIGNALR_HUB_URL` (e.g. `https://golf-mulligancup-backend.fly.dev/hubs/tournament`)
+- **Full URL:** `NEXT_PUBLIC_SIGNALR_HUB_URL` (e.g. `https://golf-tournament-backend.fly.dev/hubs/tournament`)
 - **CORS:** Backend allows any origin with credentials for SignalR.
 
 ### Hub methods (invoke from client)
