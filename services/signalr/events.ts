@@ -11,6 +11,7 @@ export const TournamentHubEvents = {
   receiveSyncState: "ReceiveSyncState",
   scorecardUpdated: "ScorecardUpdated",
   leaderboardUpdated: "LeaderboardUpdated",
+  flightLeaderboardUpdated: "FlightLeaderboardUpdated",
 } as const;
 
 export type SignalRConnectionState =

@@ -2,6 +2,7 @@ import type {
   AssignPlayerToFlightRequest,
   CreateFlightRequest,
   Flight,
+  FlightLeaderboardSnapshot,
   Hole,
   LeaderboardSnapshot,
   OperationResult,
@@ -26,6 +27,8 @@ export const tournamentApi = {
   getCourse: () => apiFetch<CourseInfo>("/api/tournament/course"),
   getLeaderboards: () =>
     apiFetch<LeaderboardSnapshot[]>("/api/tournament/leaderboards"),
+  getFlightLeaderboard: () =>
+    apiFetch<FlightLeaderboardSnapshot>("/api/tournament/flight-leaderboard"),
   getScorecard: (playerUuid: string) =>
     apiFetch<PlayerScorecard>(`/api/tournament/scorecard/${playerUuid}`),
 } as const;

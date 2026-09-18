@@ -1,6 +1,7 @@
 import type { HubConnection } from "@microsoft/signalr";
 import type {
   ClientSyncPayload,
+  FlightLeaderboardSnapshot,
   LeaderboardSnapshot,
   OperationResult,
   PlayerScorecard,
@@ -15,6 +16,7 @@ export function attachTournamentHubHandlers(
     onSyncState?: (payload: ClientSyncPayload) => void;
     onScorecardUpdated?: (scorecard: PlayerScorecard) => void;
     onLeaderboardUpdated?: (snapshot: LeaderboardSnapshot) => void;
+    onFlightLeaderboardUpdated?: (snapshot: FlightLeaderboardSnapshot) => void;
   },
 ) {
   if (handlers.onSyncState) {
@@ -32,11 +34,18 @@ export function attachTournamentHubHandlers(
       handlers.onLeaderboardUpdated,
     );
   }
+  if (handlers.onFlightLeaderboardUpdated) {
+    connection.on(
+      TournamentHubEvents.flightLeaderboardUpdated,
+      handlers.onFlightLeaderboardUpdated,
+    );
+  }
 
   return () => {
     connection.off(TournamentHubEvents.receiveSyncState);
     connection.off(TournamentHubEvents.scorecardUpdated);
     connection.off(TournamentHubEvents.leaderboardUpdated);
+    connection.off(TournamentHubEvents.flightLeaderboardUpdated);
   };
 }
 

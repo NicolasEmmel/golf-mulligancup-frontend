@@ -16,6 +16,7 @@ import {
 } from "react";
 import type {
   ClientSyncPayload,
+  FlightLeaderboardSnapshot,
   LeaderboardSnapshot,
   OperationResult,
   PlayerScorecard,
@@ -46,6 +47,7 @@ interface SignalRContextValue {
   syncPayload: ClientSyncPayload | null;
   scorecard: PlayerScorecard | null;
   leaderboards: LeaderboardSnapshot[];
+  flightLeaderboard: FlightLeaderboardSnapshot | null;
   registeredPlayerUuid: string | null;
   ensureConnected: () => Promise<HubConnection>;
   registerScoringClient: (playerUuid: string) => Promise<OperationResult>;
@@ -69,6 +71,8 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
   );
   const [scorecard, setScorecard] = useState<PlayerScorecard | null>(null);
   const [leaderboards, setLeaderboards] = useState<LeaderboardSnapshot[]>([]);
+  const [flightLeaderboard, setFlightLeaderboard] =
+    useState<FlightLeaderboardSnapshot | null>(null);
   const [registeredPlayerUuid, setRegisteredPlayerUuid] = useState<
     string | null
   >(null);
@@ -84,6 +88,7 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
       setScorecard(payload.scorecard);
     }
     setLeaderboards(payload.leaderboards ?? []);
+    setFlightLeaderboard(payload.flightLeaderboard ?? null);
   }, []);
 
   const reRegister = useCallback(async (connection: HubConnection) => {
@@ -132,6 +137,9 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
                 (a, b) => a.category - b.category,
               );
             });
+          },
+          onFlightLeaderboardUpdated: (snapshot) => {
+            setFlightLeaderboard(snapshot);
           },
         });
 
@@ -265,6 +273,8 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
     setRegisteredPlayerUuid(null);
     setSyncPayload(null);
     setScorecard(null);
+    setLeaderboards([]);
+    setFlightLeaderboard(null);
   }, []);
 
   const value = useMemo(
@@ -274,6 +284,7 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
       syncPayload,
       scorecard,
       leaderboards,
+      flightLeaderboard,
       registeredPlayerUuid,
       ensureConnected,
       registerScoringClient,
@@ -288,6 +299,7 @@ export function SignalRProvider({ children }: { children: ReactNode }) {
       syncPayload,
       scorecard,
       leaderboards,
+      flightLeaderboard,
       registeredPlayerUuid,
       ensureConnected,
       registerScoringClient,

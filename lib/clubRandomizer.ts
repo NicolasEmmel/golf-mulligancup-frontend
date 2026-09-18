@@ -5,17 +5,23 @@ export function pickRandomClubNumber(): number {
   return Math.floor(Math.random() * CLUB_WHEEL_SEGMENT_COUNT) + 1;
 }
 
-/** Total wheel rotation (deg) so `clubNumber` ends under the top pointer. */
-export function rotationForClubNumber(
-  currentRotation: number,
-  clubNumber: number,
-): number {
+function segmentCenterAngle(clubNumber: number): number {
   const slice = 360 / CLUB_WHEEL_SEGMENT_COUNT;
   const clamped = Math.min(
     CLUB_WHEEL_SEGMENT_COUNT,
     Math.max(1, Math.round(clubNumber)),
   );
-  const finalMod = (clamped - 0.5) * slice;
+  return (clamped - 0.5) * slice;
+}
+
+/** Total wheel rotation (deg) so `clubNumber` ends under the top pointer. */
+export function rotationForClubNumber(
+  currentRotation: number,
+  clubNumber: number,
+): number {
+  const center = segmentCenterAngle(clubNumber);
+  // CSS rotate(clockwise): segment at wheel angle `center` is at top when R ≡ -center (mod 360).
+  const finalMod = (360 - center + 360) % 360;
   const currentMod = ((currentRotation % 360) + 360) % 360;
   let delta = finalMod - currentMod;
   if (delta <= 0) delta += 360;
@@ -27,9 +33,10 @@ export function rotationForClubNumber(
 export function clubNumberFromRotation(rotation: number): number {
   const slice = 360 / CLUB_WHEEL_SEGMENT_COUNT;
   const mod = ((rotation % 360) + 360) % 360;
+  const wheelAngleAtPointer = (360 - mod + 360) % 360;
   const index = Math.min(
     CLUB_WHEEL_SEGMENT_COUNT - 1,
-    Math.floor(mod / slice),
+    Math.floor(wheelAngleAtPointer / slice),
   );
   return index + 1;
 }

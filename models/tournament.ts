@@ -7,6 +7,7 @@ export enum LeaderboardCategory {
   Men = 0,
   Women = 1,
   Seniors = 2,
+  Overall = 3,
 }
 
 export interface Player {
@@ -94,10 +95,26 @@ export interface LeaderboardSnapshot {
   entries: LeaderboardEntry[];
 }
 
+export interface FlightLeaderboardEntry {
+  day: number;
+  flightNumber: number;
+  playerCount: number;
+  averageGross: number;
+  averageNet: number;
+  position: number;
+  hasScores?: boolean;
+}
+
+export interface FlightLeaderboardSnapshot {
+  day: number;
+  entries: FlightLeaderboardEntry[];
+}
+
 export interface ClientSyncPayload {
   scorecard: PlayerScorecard | null;
   leaderboards: LeaderboardSnapshot[];
   scores: PlayerScore[];
+  flightLeaderboard?: FlightLeaderboardSnapshot | null;
 }
 
 export interface CreatePlayerRequest {

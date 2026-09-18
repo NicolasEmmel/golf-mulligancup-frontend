@@ -45,25 +45,26 @@ type Props = {
 
 export function ClubRandomizerWheel({ onResult }: Props) {
   const [rotation, setRotation] = useState(0);
+  const rotationRef = useRef(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<number | null>(null);
-  const pendingTarget = useRef<number | null>(null);
 
   const handleSpin = useCallback(() => {
     if (spinning) return;
     const target = pickRandomClubNumber();
-    pendingTarget.current = target;
     setSpinning(true);
     setResult(null);
-    setRotation((current) => rotationForClubNumber(current, target));
+    setRotation((current) => {
+      const next = rotationForClubNumber(current, target);
+      rotationRef.current = next;
+      return next;
+    });
   }, [spinning]);
 
   const handleTransitionEnd = () => {
     if (!spinning) return;
     setSpinning(false);
-    const club =
-      pendingTarget.current ?? clubNumberFromRotation(rotation);
-    pendingTarget.current = null;
+    const club = clubNumberFromRotation(rotationRef.current);
     setResult(club);
     onResult?.(club);
   };

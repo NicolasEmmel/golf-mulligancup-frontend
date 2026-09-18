@@ -3,21 +3,14 @@
 import { Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FairwayShell } from "@/components/common/FairwayShell";
-import { FilterChip } from "@/components/common/FilterChip";
 import { LoadingState } from "@/components/common/LoadingState";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { useSignalR } from "@/context/SignalRContext";
-import { LeaderboardCategory } from "@/models/tournament";
-
-const categories: { id: LeaderboardCategory; label: string }[] = [
-  { id: LeaderboardCategory.Men, label: "Herren" },
-  { id: LeaderboardCategory.Women, label: "Damen" },
-];
+import { pickLeaderboardEntries } from "@/lib/leaderboard";
 
 export default function DisplayPage() {
   const { leaderboards, registerLeaderboardViewer, ensureConnected } =
     useSignalR();
-  const [category, setCategory] = useState(LeaderboardCategory.Men);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -35,21 +28,9 @@ export default function DisplayPage() {
     };
   }, [ensureConnected, registerLeaderboardViewer]);
 
-  // Optional slow rotation between categories
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setCategory((c) =>
-        c === LeaderboardCategory.Men
-          ? LeaderboardCategory.Women
-          : LeaderboardCategory.Men,
-      );
-    }, 20000);
-    return () => window.clearInterval(id);
-  }, []);
-
   const entries = useMemo(
-    () => leaderboards.find((s) => s.category === category)?.entries ?? [],
-    [leaderboards, category],
+    () => pickLeaderboardEntries(leaderboards),
+    [leaderboards],
   );
 
   return (
@@ -62,20 +43,8 @@ export default function DisplayPage() {
               <h1 className="text-5xl font-black tracking-tight text-primary md:text-6xl">
                 RANGLISTE
               </h1>
-              <p className="mt-2 text-xl text-muted">
-                {categories.find((c) => c.id === category)?.label}
-              </p>
+              <p className="mt-2 text-xl text-muted">Mulligan-Cup 2026</p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            {categories.map((c) => (
-              <FilterChip
-                key={c.id}
-                label={c.label}
-                selected={category === c.id}
-                onClick={() => setCategory(c.id)}
-              />
-            ))}
           </div>
         </div>
 

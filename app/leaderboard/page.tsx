@@ -8,42 +8,47 @@ import { FairwayShell } from "@/components/common/FairwayShell";
 import { FilterChip } from "@/components/common/FilterChip";
 import { LoadingState } from "@/components/common/LoadingState";
 import { MintCard } from "@/components/common/MintCard";
+import { FlightLeaderboardTable } from "@/components/leaderboard/FlightLeaderboardTable";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { useSignalR } from "@/context/SignalRContext";
 import { routes } from "@/lib/constants";
 import { normalizeError } from "@/lib/errors";
-import {
-  LeaderboardCategory,
-  type LeaderboardSnapshot,
+import { pickLeaderboardEntries } from "@/lib/leaderboard";
+import type {
+  FlightLeaderboardSnapshot,
+  LeaderboardSnapshot,
 } from "@/models/tournament";
 import { tournamentApi } from "@/services/api/tournamentApi";
 
-const categories: { id: LeaderboardCategory; label: string }[] = [
-  { id: LeaderboardCategory.Men, label: "Herren" },
-  { id: LeaderboardCategory.Women, label: "Damen" },
-];
+type LeaderboardView = "individual" | "flights";
 
 export default function LeaderboardPage() {
   const {
     connectionState,
     leaderboards,
+    flightLeaderboard,
     registerLeaderboardViewer,
     ensureConnected,
   } = useSignalR();
-  const [category, setCategory] = useState<LeaderboardCategory>(
-    LeaderboardCategory.Men,
-  );
+  const [view, setView] = useState<LeaderboardView>("individual");
   const [bootError, setBootError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [restBoards, setRestBoards] = useState<LeaderboardSnapshot[]>([]);
+  const [restFlightBoard, setRestFlightBoard] =
+    useState<FlightLeaderboardSnapshot | null>(null);
 
-  // Show scores ASAP via REST; SignalR then keeps them live.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const boards = await tournamentApi.getLeaderboards();
-        if (!cancelled) setRestBoards(boards);
+        const [boards, flights] = await Promise.all([
+          tournamentApi.getLeaderboards(),
+          tournamentApi.getFlightLeaderboard(),
+        ]);
+        if (!cancelled) {
+          setRestBoards(boards);
+          setRestFlightBoard(flights);
+        }
       } catch {
         /* live register may still fill the table */
       }
@@ -53,7 +58,6 @@ export default function LeaderboardPage() {
     };
   }, []);
 
-  // Register (and retry) whenever we are connected — clears sticky boot errors.
   useEffect(() => {
     if (connectionState !== "connected") return;
 
@@ -75,7 +79,6 @@ export default function LeaderboardPage() {
     };
   }, [connectionState, registerLeaderboardViewer]);
 
-  // Kick off connect if we landed here while still offline / connecting.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -91,13 +94,16 @@ export default function LeaderboardPage() {
   }, [ensureConnected]);
 
   const boards = leaderboards.length > 0 ? leaderboards : restBoards;
+  const flightBoard = flightLeaderboard ?? restFlightBoard;
 
-  const entries = useMemo(
-    () => boards.find((s) => s.category === category)?.entries ?? [],
-    [boards, category],
+  const individualEntries = useMemo(
+    () => pickLeaderboardEntries(boards),
+    [boards],
   );
 
-  const showTable = ready || boards.length > 0;
+  const flightEntries = flightBoard?.entries ?? [];
+  const showTable =
+    ready || boards.length > 0 || (flightBoard?.entries.length ?? 0) > 0;
 
   return (
     <FairwayShell>
@@ -116,14 +122,16 @@ export default function LeaderboardPage() {
         </MintCard>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <FilterChip
-              key={String(c.id)}
-              label={c.label}
-              selected={category === c.id}
-              onClick={() => setCategory(c.id)}
-            />
-          ))}
+          <FilterChip
+            label="Einzel"
+            selected={view === "individual"}
+            onClick={() => setView("individual")}
+          />
+          <FilterChip
+            label="Flights (Team)"
+            selected={view === "flights"}
+            onClick={() => setView("flights")}
+          />
         </div>
 
         <div className="mt-4 flex-1 space-y-3">
@@ -138,8 +146,10 @@ export default function LeaderboardPage() {
           ) : null}
           {!showTable ? (
             <LoadingState message="Verbindung zur Live-Rangliste…" />
+          ) : view === "individual" ? (
+            <LeaderboardTable entries={individualEntries} />
           ) : (
-            <LeaderboardTable entries={entries} />
+            <FlightLeaderboardTable entries={flightEntries} />
           )}
         </div>
 

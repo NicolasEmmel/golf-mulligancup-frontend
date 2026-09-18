@@ -59,7 +59,7 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
   if (entries.length === 0) {
     return (
       <p className="py-10 text-center text-muted">
-        Noch keine Spieler in dieser Kategorie.
+        Noch keine Spieler angelegt.
       </p>
     );
   }

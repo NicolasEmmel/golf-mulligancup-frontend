@@ -13,6 +13,13 @@ describe("clubRandomizer", () => {
     }
   });
 
+  it("pointer angle matches segment center after spin", () => {
+    for (let n = 1; n <= CLUB_WHEEL_SEGMENT_COUNT; n++) {
+      const rot = rotationForClubNumber(12345, n);
+      expect(clubNumberFromRotation(rot)).toBe(n);
+    }
+  });
+
   it("accumulates rotation on repeated spins", () => {
     let rot = 0;
     rot = rotationForClubNumber(rot, 3);
