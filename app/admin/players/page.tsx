@@ -15,7 +15,6 @@ const emptyForm = {
   name: "",
   handicapIndex: 18,
   gender: Gender.Male,
-  isSenior: false,
 };
 
 export default function AdminPlayersPage() {
@@ -53,14 +52,14 @@ export default function AdminPlayersPage() {
           name: form.name.trim(),
           handicapIndex: Number(form.handicapIndex),
           gender: form.gender,
-          isSenior: form.isSenior,
+          isSenior: false,
         });
       } else {
         await playerApi.create({
           name: form.name.trim(),
           handicapIndex: Number(form.handicapIndex),
           gender: form.gender,
-          isSenior: form.isSenior,
+          isSenior: false,
         });
       }
       setForm(emptyForm);
@@ -121,6 +120,25 @@ export default function AdminPlayersPage() {
             />
           </label>
           <label className="block text-sm font-semibold">
+            Handicap-Index (HCP)
+            <input
+              required
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={54}
+              step={0.1}
+              value={form.handicapIndex}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  handicapIndex: e.target.value === "" ? 0 : Number(e.target.value),
+                }))
+              }
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+            />
+          </label>
+          <label className="block text-sm font-semibold">
             Geschlecht
             <select
               value={form.gender}
@@ -135,17 +153,6 @@ export default function AdminPlayersPage() {
               <option value={Gender.Male}>Männlich</option>
               <option value={Gender.Female}>Weiblich</option>
             </select>
-          </label>
-          <label className="flex items-center gap-2 self-end text-sm font-semibold">
-            <input
-              type="checkbox"
-              checked={form.isSenior}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, isSenior: e.target.checked }))
-              }
-              className="h-4 w-4 accent-primary"
-            />
-            Senior
           </label>
           <div className="md:col-span-2 flex gap-3">
             <button
@@ -180,8 +187,8 @@ export default function AdminPlayersPage() {
               <thead className="bg-surface-mint text-left text-xs font-bold uppercase text-primary">
                 <tr>
                   <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">HCP</th>
                   <th className="px-4 py-3">Geschlecht</th>
-                  <th className="px-4 py-3">Senior</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -189,10 +196,10 @@ export default function AdminPlayersPage() {
                 {players.map((p) => (
                   <tr key={p.uuid} className="border-t border-border/60">
                     <td className="px-4 py-3 font-semibold">{p.name}</td>
+                    <td className="px-4 py-3 tabular-nums">{p.handicapIndex}</td>
                     <td className="px-4 py-3">
                       {p.gender === Gender.Female ? "Weiblich" : "Männlich"}
                     </td>
-                    <td className="px-4 py-3">{p.isSenior ? "Ja" : "Nein"}</td>
                     <td className="px-4 py-3 text-right space-x-2">
                       <button
                         type="button"
@@ -203,7 +210,6 @@ export default function AdminPlayersPage() {
                             name: p.name,
                             handicapIndex: p.handicapIndex,
                             gender: p.gender,
-                            isSenior: p.isSenior,
                           });
                         }}
                       >

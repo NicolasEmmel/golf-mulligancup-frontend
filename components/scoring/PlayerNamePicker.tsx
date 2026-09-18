@@ -80,9 +80,6 @@ export function PlayerNamePicker({
                   <span className="block text-base font-extrabold">
                     {player.name}
                   </span>
-                  {player.isSenior ? (
-                    <span className="text-xs text-muted">Senior</span>
-                  ) : null}
                 </span>
               </button>
             </li>

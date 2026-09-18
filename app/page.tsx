@@ -6,7 +6,7 @@ import { ConnectionStatus } from "@/components/common/ConnectionStatus";
 import { FairwayShell } from "@/components/common/FairwayShell";
 import { PrimaryCta } from "@/components/common/PrimaryCta";
 import { useSignalR } from "@/context/SignalRContext";
-import { APP_NAME, routes } from "@/lib/constants";
+import { APP_NAME, APP_TAGLINE, routes } from "@/lib/constants";
 
 export default function HomePage() {
   const { connectionState } = useSignalR();
@@ -19,7 +19,7 @@ export default function HomePage() {
           {APP_NAME}
         </h1>
         <p className="mt-3 text-center text-sm text-muted">
-          Live-Turnier-Scoring
+          {APP_TAGLINE}
         </p>
         <div className="mt-4">
           <ConnectionStatus state={connectionState} />

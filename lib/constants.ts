@@ -1,4 +1,5 @@
-export const APP_NAME = "Golf Live Scoring";
+export const APP_NAME = "Mulligan-Cup 2026";
+export const APP_TAGLINE = "Presented by GC Kitzingen";
 
 /** Must match backend `TournamentConfiguration.Day`. */
 export const TOURNAMENT_DAY = 1;

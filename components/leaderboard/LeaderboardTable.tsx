@@ -28,24 +28,38 @@ function netStrokes(entry: LeaderboardEntry): number {
   return entry.netto ?? 0;
 }
 
-/** Sort by gross to-par, lowest first; re-rank for display. */
+function hasStartedRound(entry: LeaderboardEntry): boolean {
+  return (entry.thru ?? 0) > 0;
+}
+
+/** Scored players by to-par; players without holes stay at the bottom. */
 function sortByToPar(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-  return [...entries]
-    .sort((a, b) => {
-      const totalDiff = a.toParTotal - b.toParTotal;
-      if (totalDiff !== 0) return totalDiff;
-      const dayDiff = a.toParDay - b.toParDay;
-      if (dayDiff !== 0) return dayDiff;
-      return a.playerName.localeCompare(b.playerName, "de");
-    })
-    .map((entry, index) => ({ ...entry, position: index + 1 }));
+  const scored = entries.filter(hasStartedRound);
+  const unscored = entries.filter((e) => !hasStartedRound(e));
+
+  const sortScored = [...scored].sort((a, b) => {
+    const totalDiff = a.toParTotal - b.toParTotal;
+    if (totalDiff !== 0) return totalDiff;
+    const dayDiff = a.toParDay - b.toParDay;
+    if (dayDiff !== 0) return dayDiff;
+    return a.playerName.localeCompare(b.playerName, "de");
+  });
+
+  const sortUnscored = [...unscored].sort((a, b) =>
+    a.playerName.localeCompare(b.playerName, "de"),
+  );
+
+  return [...sortScored, ...sortUnscored].map((entry, index) => ({
+    ...entry,
+    position: index + 1,
+  }));
 }
 
 export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
   if (entries.length === 0) {
     return (
       <p className="py-10 text-center text-muted">
-        Noch keine Spieler mit erfassten Löchern.
+        Noch keine Spieler in dieser Kategorie.
       </p>
     );
   }
@@ -76,10 +90,15 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
           </tr>
         </thead>
         <tbody>
-          {ranked.map((entry) => (
+          {ranked.map((entry) => {
+            const started = hasStartedRound(entry);
+            return (
             <tr
               key={entry.playerUuid}
-              className="border-b border-border/60 last:border-0"
+              className={cn(
+                "border-b border-border/60 last:border-0",
+                !started && "text-muted",
+              )}
             >
               <td className="px-2 py-3 sm:px-3">
                 <span
@@ -95,27 +114,28 @@ export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
                 {entry.playerName}
               </td>
               <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
-                {entry.thru >= 18 ? "F" : entry.thru}
+                {!started ? "—" : entry.thru >= 18 ? "F" : entry.thru}
               </td>
               <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
-                {grossStrokes(entry)}
+                {started ? grossStrokes(entry) : "—"}
               </td>
               <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
-                {netStrokes(entry)}
+                {started ? netStrokes(entry) : "—"}
               </td>
               <td
                 className={cn(
                   "px-1 py-3 text-center font-bold tabular-nums sm:px-3",
-                  toParClass(entry.toParTotal ?? 0),
+                  started ? toParClass(entry.toParTotal ?? 0) : "text-muted",
                 )}
               >
-                {formatToPar(entry.toParTotal ?? 0)}
+                {started ? formatToPar(entry.toParTotal ?? 0) : "—"}
               </td>
               <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
-                {entry.mulligans ?? 0}
+                {started ? (entry.mulligans ?? 0) : "—"}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

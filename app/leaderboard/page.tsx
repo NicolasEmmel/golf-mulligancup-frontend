@@ -21,7 +21,6 @@ import { tournamentApi } from "@/services/api/tournamentApi";
 const categories: { id: LeaderboardCategory; label: string }[] = [
   { id: LeaderboardCategory.Men, label: "Herren" },
   { id: LeaderboardCategory.Women, label: "Damen" },
-  { id: LeaderboardCategory.Seniors, label: "Senioren" },
 ];
 
 export default function LeaderboardPage() {

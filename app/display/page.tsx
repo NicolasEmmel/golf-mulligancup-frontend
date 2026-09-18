@@ -12,7 +12,6 @@ import { LeaderboardCategory } from "@/models/tournament";
 const categories: { id: LeaderboardCategory; label: string }[] = [
   { id: LeaderboardCategory.Men, label: "Herren" },
   { id: LeaderboardCategory.Women, label: "Damen" },
-  { id: LeaderboardCategory.Seniors, label: "Senioren" },
 ];
 
 export default function DisplayPage() {
@@ -39,7 +38,11 @@ export default function DisplayPage() {
   // Optional slow rotation between categories
   useEffect(() => {
     const id = window.setInterval(() => {
-      setCategory((c) => (c + 1) % 3);
+      setCategory((c) =>
+        c === LeaderboardCategory.Men
+          ? LeaderboardCategory.Women
+          : LeaderboardCategory.Men,
+      );
     }, 20000);
     return () => window.clearInterval(id);
   }, []);
