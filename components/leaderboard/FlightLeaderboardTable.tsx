@@ -1,5 +1,10 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { FlightLeaderboardEntry } from "@/models/tournament";
+
+type SortKey = "gross" | "net";
 
 function rankClass(position: number) {
   if (position === 1) return "bg-rank-gold text-white";
@@ -19,11 +24,89 @@ function hasTeamScores(entry: FlightLeaderboardEntry): boolean {
   return entry.hasScores === true;
 }
 
+function sortFlightEntries(
+  entries: FlightLeaderboardEntry[],
+  sortKey: SortKey,
+  descending: boolean,
+): FlightLeaderboardEntry[] {
+  const scored = entries.filter(hasTeamScores);
+  const unscored = entries.filter((e) => !hasTeamScores(e));
+
+  const value = (e: FlightLeaderboardEntry) =>
+    sortKey === "gross" ? e.averageGross : e.averageNet;
+
+  const sortedScored = [...scored].sort((a, b) => {
+    const diff = value(a) - value(b);
+    if (diff !== 0) {
+      return descending ? -diff : diff;
+    }
+    return a.flightNumber - b.flightNumber;
+  });
+
+  const sortedUnscored = [...unscored].sort(
+    (a, b) => a.flightNumber - b.flightNumber,
+  );
+
+  return [...sortedScored, ...sortedUnscored].map((entry, index) => ({
+    ...entry,
+    position: index + 1,
+  }));
+}
+
+function SortHeader({
+  label,
+  active,
+  descending,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  descending: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <th className="px-1 py-3 text-center sm:px-3">
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "inline-flex w-full items-center justify-center gap-0.5 font-bold uppercase tracking-wide transition hover:opacity-80",
+          active ? "text-primary underline decoration-2 underline-offset-4" : "",
+        )}
+      >
+        {label}
+        {active ? (
+          <span className="text-[0.6rem] normal-case" aria-hidden>
+            {descending ? "↓" : "↑"}
+          </span>
+        ) : null}
+      </button>
+    </th>
+  );
+}
+
 export function FlightLeaderboardTable({
   entries,
 }: {
   entries: FlightLeaderboardEntry[];
 }) {
+  const [sortKey, setSortKey] = useState<SortKey>("net");
+  const [descending, setDescending] = useState(true);
+
+  const ranked = useMemo(
+    () => sortFlightEntries(entries, sortKey, descending),
+    [entries, sortKey, descending],
+  );
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setDescending((d) => !d);
+      return;
+    }
+    setSortKey(key);
+    setDescending(key === "net");
+  };
+
   if (entries.length === 0) {
     return (
       <p className="py-10 text-center text-muted">
@@ -38,7 +121,6 @@ export function FlightLeaderboardTable({
         <colgroup>
           <col className="w-10 sm:w-auto" />
           <col />
-          <col className="w-12 sm:w-auto" />
           <col className="w-14 sm:w-auto" />
           <col className="w-14 sm:w-auto" />
         </colgroup>
@@ -46,13 +128,22 @@ export function FlightLeaderboardTable({
           <tr className="border-b border-border bg-surface-mint text-[0.65rem] font-bold uppercase tracking-wide text-primary sm:text-xs">
             <th className="px-2 py-3 sm:px-3">#</th>
             <th className="px-2 py-3 sm:px-3">Team</th>
-            <th className="px-1 py-3 text-center sm:px-3">Spieler</th>
-            <th className="px-1 py-3 text-center sm:px-3">Ø Brutto</th>
-            <th className="px-1 py-3 text-center sm:px-3">Ø Netto</th>
+            <SortHeader
+              label="Ø Brutto"
+              active={sortKey === "gross"}
+              descending={descending}
+              onClick={() => handleSort("gross")}
+            />
+            <SortHeader
+              label="Ø Netto"
+              active={sortKey === "net"}
+              descending={descending}
+              onClick={() => handleSort("net")}
+            />
           </tr>
         </thead>
         <tbody>
-          {entries.map((entry) => {
+          {ranked.map((entry) => {
             const started = hasTeamScores(entry);
             return (
               <tr
@@ -87,9 +178,6 @@ export function FlightLeaderboardTable({
                   ) : (
                     <span className="font-extrabold text-muted">—</span>
                   )}
-                </td>
-                <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
-                  {entry.playerCount}
                 </td>
                 <td className="px-1 py-3 text-center font-semibold tabular-nums sm:px-3">
                   {started ? formatAverage(entry.averageGross) : "—"}
