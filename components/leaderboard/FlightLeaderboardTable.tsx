@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SortableColumnHeader } from "@/components/leaderboard/SortableColumnHeader";
 import { cn } from "@/lib/utils";
 import type { FlightLeaderboardEntry } from "@/models/tournament";
 
@@ -53,38 +54,6 @@ function sortFlightEntries(
   }));
 }
 
-function SortHeader({
-  label,
-  active,
-  descending,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  descending: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <th className="px-1 py-3 text-center sm:px-3">
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "inline-flex w-full items-center justify-center gap-0.5 font-bold uppercase tracking-wide transition hover:opacity-80",
-          active ? "text-primary underline decoration-2 underline-offset-4" : "",
-        )}
-      >
-        {label}
-        {active ? (
-          <span className="text-[0.6rem] normal-case" aria-hidden>
-            {descending ? "↓" : "↑"}
-          </span>
-        ) : null}
-      </button>
-    </th>
-  );
-}
-
 export function FlightLeaderboardTable({
   entries,
 }: {
@@ -128,16 +97,14 @@ export function FlightLeaderboardTable({
           <tr className="border-b border-border bg-surface-mint text-[0.65rem] font-bold uppercase tracking-wide text-primary sm:text-xs">
             <th className="px-2 py-3 sm:px-3">#</th>
             <th className="px-2 py-3 sm:px-3">Team</th>
-            <SortHeader
+            <SortableColumnHeader
               label="Ø Brutto"
               active={sortKey === "gross"}
-              descending={descending}
               onClick={() => handleSort("gross")}
             />
-            <SortHeader
+            <SortableColumnHeader
               label="Ø Netto"
               active={sortKey === "net"}
-              descending={descending}
               onClick={() => handleSort("net")}
             />
           </tr>
